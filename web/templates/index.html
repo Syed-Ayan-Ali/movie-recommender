@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Filter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Movie Filter</h1>
+
+        <div id="filters">
+            <div class="filter-section">
+                <h3>Mood</h3>
+                <select id="mood">
+                    <option value="">Select Mood</option>
+                    <option value="nature documentary">Nature Documentary</option>
+                    <option value="old timer">Old Timer</option>
+                    <option value="india">India</option>
+                    <option value="musical">Musical</option>
+                    <option value="romantic">Romantic</option>
+                    <option value="exciting">Exciting</option>
+                    <option value="melancholic">Melancholic</option>
+                </select>
+            </div>
+
+            <div class="filter-section">
+                <h3>Release Year</h3>
+                <div id="years"></div>
+            </div>
+
+            <div class="filter-section">
+                <h3>Genres</h3>
+                <div id="genres"></div>
+            </div>
+
+            <div class="filter-section">
+                <h3>Cast</h3>
+                <input type="text" id="cast" placeholder="Enter cast name">
+            </div>
+
+            <div class="filter-section">
+                <h3>Title</h3>
+                <input type="text" id="title" placeholder="Enter title">
+            </div>
+
+            <div class="filter-section">
+                <h3>Description</h3>
+                <input type="text" id="description" placeholder="Enter keywords (space separated)">
+                <div>
+                    <input type="radio" id="description_and" name="description_logic" value="and" checked>
+                    <label for="description_and">AND</label>
+                    <input type="radio" id="description_or" name="description_logic" value="or">
+                    <label for="description_or">OR</label>
+                </div>
+            </div>
+
+            <button onclick="filterMovies()">Filter Movies</button>
+        </div>
+
+        <h2>Movies</h2>
+        <div id="movies"></div>
+    </div>
+
+    <script>
+        async function fetchCategories() {
+            const response = await fetch('/categories');
+            const categories = await response.json();
+            console.log("Categories received:", categories);
+
+            populateFilters('genres', categories.genres);
+            populateYears('years', categories.years);
+        }
+
+        function populateFilters(filterId, items) {
+            const container = document.getElementById(filterId);
+            items.forEach(item => {
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = item.trim();
+                checkbox.id = `${filterId}-${item.trim()}`;
+
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.textContent = item.trim();
+
+                container.appendChild(checkbox);
+                container.appendChild(label);
+            });
+        }
+
+        function populateYears(filterId, items) {
+            const container = document.getElementById(filterId);
+            items.forEach(item => {
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = item;
+                checkbox.id = `${filterId}-${item}`;
+
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.textContent = item;
+
+                container.appendChild(checkbox);
+                container.appendChild(label);
+            });
+        }
+
+        async function filterMovies() {
+            const genres = getCheckedValues('genres');
+            const cast = document.getElementById('cast').value.trim().toLowerCase();
+            const title = document.getElementById('title').value.trim().toLowerCase();
+            const years = getCheckedValues('years');
+            const description = document.getElementById('description').value.trim().toLowerCase();
+            const description_logic = document.querySelector('input[name="description_logic"]:checked').value;
+            const mood = document.getElementById('mood').value.trim().toLowerCase();
+
+            const filters = { genres: genres, cast: cast, title: title, years: years, description: description, description_logic: description_logic, mood: mood };
+
+            try {
+                const response = await fetch('/movies', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(filters)
+                });
+
+                const movies = await response.json();
+                displayMovies(movies);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function getCheckedValues(filterId) {
+            const checkboxes = document.querySelectorAll(`#${filterId} input[type="checkbox"]:checked`);
+            return Array.from(checkboxes).map(checkbox => checkbox.value);
+        }
+
+        function displayMovies(movies) {
+            const container = document.getElementById('movies');
+            container.innerHTML = '';
+            movies.forEach(movie => {
+                const movieDiv = document.createElement('div');
+                movieDiv.innerHTML = `
+                    <a href="${movie.link}" target="_blank">${movie.title} (${movie.year})</a>
+                    <p>Genres: ${movie.genres}</p>
+                    <p>Cast: ${movie.cast}</p>
+                    <p>${movie.description}</p>
+                `;
+                container.appendChild(movieDiv);
+            });
+        }
+
+        window.onload = fetchCategories;
+    </script>
+</body>
+</html>
