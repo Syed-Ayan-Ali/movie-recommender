@@ -1,0 +1,24 @@
+{
+    "nature documentary": {
+        "genres": ["documentary"],
+        "description_keywords": ["nature", "wildlife", "environment"]
+    },
+    "old timer": {
+        "year": "<1950"
+    },
+    "india": {
+        "description_keywords": ["india", "indian"]
+    },
+    "musical": {
+        "genres": ["musical"]
+    },
+    "romantic": {
+        "genres": ["romantic"]
+    },
+    "exciting": {
+        "genres": ["action", "thriller", "adventure"]
+    },
+    "melancholic": {
+        "genres": ["drama", "melancholic"]
+    }
+}

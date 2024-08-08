@@ -1,3 +1,72 @@
+/* Existing styles */
+
+/* Filter Toggle Styles */
+.filter-toggle {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.filter-toggle input[type="radio"] {
+    display: none;
+}
+
+.filter-toggle label {
+    padding: 10px 15px;
+    border-radius: 5px;
+    background-color: #444;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.filter-toggle label:hover {
+    background-color: #555;
+}
+
+/* Pagination Styles */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    list-style: none; /* Remove default list style */
+    padding: 0; /* Remove default padding */
+}
+
+.page-item {
+    height: fit-content;
+    width: fit-content;
+    margin: 5px;
+    padding: 10px
+}
+
+.page-link {
+    display: block;
+    padding: 10px 15px;
+    background-color: #444;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.page-item.active .page-link {
+    background-color: #d4af37; /* Gold color */
+    color: #2c2c2c;
+}
+
+.page-link:hover {
+    background-color: #555;
+}
+
+/* Additional styles for navigation buttons */
+.page-link.nav-button {
+    padding: 10px 10px;
+    font-weight: bold;
+}
+
 /* General Styles */
 body {
     font-family: Arial, sans-serif;
@@ -59,7 +128,7 @@ h1, h2, h3 {
     display: none;
 }
 
-#filters input[type="checkbox"]:checked + label {
+#filters input[type="checkbox"]:checked + label, #filters input[type="radio"]:checked + label {
     background-color: #d4af37; /* Gold color */
     color: #2c2c2c;
 }
