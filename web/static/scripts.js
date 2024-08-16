@@ -1,18 +1,36 @@
 let currentPage = 1;
 let totalItems = 0;
 const itemsPerPage = 10;
+let contentType = 'movies'; // Default to movies
 
+// Function to fetch categories based on the content type (movies, series, or both)
 async function fetchCategories() {
-    const response = await fetch('/categories');
+    contentType = document.querySelector('input[name="content_type"]:checked').value;
+    toggleYearFilter(contentType);  // Show/hide year filter based on content type
+    const response = await fetch(`/categories?type=${contentType}`);
     const categories = await response.json();
     console.log("Categories received:", categories);
 
     populateFilters('genres', categories.genres);
-    populateYears('years', categories.years);
+    if (contentType !== 'series') {
+        populateYears('years', categories.years);
+    }
 }
 
+// Function to toggle the visibility of the year filter based on content type
+function toggleYearFilter(contentType) {
+    const yearFilterSection = document.getElementById('year-filter');
+    if (contentType === 'series') {
+        yearFilterSection.style.display = 'none';  // Hide year filter if TV series is selected
+    } else {
+        yearFilterSection.style.display = 'block';  // Show year filter otherwise
+    }
+}
+
+// Function to dynamically populate filter options
 function populateFilters(filterId, items) {
     const container = document.getElementById(filterId);
+    container.innerHTML = ''; // Clear previous filters
     items.forEach(item => {
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
@@ -28,8 +46,10 @@ function populateFilters(filterId, items) {
     });
 }
 
+// Function to populate year filters
 function populateYears(filterId, items) {
     const container = document.getElementById(filterId);
+    container.innerHTML = ''; // Clear previous filters
     items.forEach(item => {
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
@@ -45,7 +65,9 @@ function populateYears(filterId, items) {
     });
 }
 
-async function filterMovies(page) {
+// Function to filter content (movies or series)
+async function filterContent(page) {
+    const contentType = document.querySelector('input[name="content_type"]:checked').value;  // Get the content type selection
     const genres = getCheckedValues('genres');
     const cast = document.getElementById('cast').value.trim().toLowerCase();
     const title = document.getElementById('title').value.trim().toLowerCase();
@@ -54,10 +76,22 @@ async function filterMovies(page) {
     const filter_logic = document.querySelector('input[name="filter_logic"]:checked').value;
     const mood = document.getElementById('mood').value.trim().toLowerCase();
 
-    const filters = { genres: genres, cast: cast, title: title, years: years, description: description, filter_logic: filter_logic, mood: mood, page: page, items_per_page: itemsPerPage };
+    const filters = { 
+        genres: genres, 
+        cast: cast, 
+        title: title, 
+        years: contentType !== 'series' ? years : [],  // Only include years if it's not TV series
+        description: description, 
+        filter_logic: filter_logic, 
+        mood: mood, 
+        page: page, 
+        items_per_page: itemsPerPage, 
+        type: contentType  // Include the content type in the filters
+    };
     console.log('Filters:', filters);
+
     try {
-        const response = await fetch('/movies', {
+        const response = await fetch(`/content`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(filters)
@@ -66,7 +100,7 @@ async function filterMovies(page) {
         const result = await response.json();
         totalItems = result.total_items;
         currentPage = result.page;
-        displayMovies(result.movies);
+        displayContent(result.content);  // Display content instead of just movies
         updatePagination();
     } catch (error) {
         console.error('Error:', error);
@@ -78,18 +112,18 @@ function getCheckedValues(filterId) {
     return Array.from(checkboxes).map(checkbox => checkbox.value);
 }
 
-function displayMovies(movies) {
-    const container = document.getElementById('movies');
+function displayContent(content) {
+    const container = document.getElementById('movies'); // This can be used for both movies and series
     container.innerHTML = '';
-    movies.forEach(movie => {
-        const movieDiv = document.createElement('div');
-        movieDiv.innerHTML = `
-            <a href="${movie.link}" target="_blank">${movie.title} (${movie.year})</a>
-            <p>Genres: ${movie.genres}</p>
-            <p>Cast: ${movie.cast}</p>
-            <p>${movie.description}</p>
+    content.forEach(item => {
+        const contentDiv = document.createElement('div');
+        contentDiv.innerHTML = `
+            <a href="${item.link}" target="_blank">${item.title} (${item.year || 'N/A'})</a>
+            <p>Genres: ${item.genres}</p>
+            <p>Cast: ${item.cast}</p>
+            <p>${item.description}</p>
         `;
-        container.appendChild(movieDiv);
+        container.appendChild(contentDiv);
     });
 }
 
@@ -100,28 +134,25 @@ function updatePagination() {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     if (totalPages <= 1) return;
 
-    // Add "First" button
     const firstPageItem = document.createElement('li');
     firstPageItem.className = 'page-item';
-    firstPageItem.innerHTML = `<a class="page-link nav-button" href="#" onclick="filterMovies(1)">&#171;</a>`;
+    firstPageItem.innerHTML = `<a class="page-link nav-button" href="#" onclick="filterContent(1)">&#171;</a>`;
     paginationList.appendChild(firstPageItem);
 
-    // Add "Previous" button
     if (currentPage > 1) {
         const prevPageItem = document.createElement('li');
         prevPageItem.className = 'page-item';
-        prevPageItem.innerHTML = `<a class="page-link nav-button" href="#" onclick="filterMovies(${currentPage - 1})">&#8249;</a>`;
+        prevPageItem.innerHTML = `<a class="page-link nav-button" href="#" onclick="filterContent(${currentPage - 1})">&#8249;</a>`;
         paginationList.appendChild(prevPageItem);
     }
 
-    // Add page number buttons
     let startPage = Math.max(1, currentPage - 1);
     let endPage = Math.min(totalPages, currentPage + 1);
 
     if (startPage > 1) {
         const firstPage = document.createElement('li');
         firstPage.className = 'page-item';
-        firstPage.innerHTML = `<a class="page-link" href="#" onclick="filterMovies(1)">1</a>`;
+        firstPage.innerHTML = `<a class="page-link" href="#" onclick="filterContent(1)">1</a>`;
         paginationList.appendChild(firstPage);
 
         if (startPage > 2) {
@@ -136,7 +167,7 @@ function updatePagination() {
         const pageItem = document.createElement('li');
         pageItem.className = 'page-item';
         if (i === currentPage) pageItem.classList.add('active');
-        pageItem.innerHTML = `<a class="page-link" href="#" onclick="filterMovies(${i})">${i}</a>`;
+        pageItem.innerHTML = `<a class="page-link" href="#" onclick="filterContent(${i})">${i}</a>`;
         paginationList.appendChild(pageItem);
     }
 
@@ -150,23 +181,27 @@ function updatePagination() {
 
         const lastPage = document.createElement('li');
         lastPage.className = 'page-item';
-        lastPage.innerHTML = `<a class="page-link" href="#" onclick="filterMovies(${totalPages})">${totalPages}</a>`;
+        lastPage.innerHTML = `<a class="page-link" href="#" onclick="filterContent(${totalPages})">${totalPages}</a>`;
         paginationList.appendChild(lastPage);
     }
 
-    // Add "Next" button
     if (currentPage < totalPages) {
         const nextPageItem = document.createElement('li');
         nextPageItem.className = 'page-item';
-        nextPageItem.innerHTML = `<a class="page-link nav-button" href="#" onclick="filterMovies(${currentPage + 1})">&#8250;</a>`;
+        nextPageItem.innerHTML = `<a class="page-link nav-button" href="#" onclick="filterContent(${currentPage + 1})">&#8250;</a>`;
         paginationList.appendChild(nextPageItem);
     }
 
-    // Add "Last" button
     const lastPageItem = document.createElement('li');
     lastPageItem.className = 'page-item';
-    lastPageItem.innerHTML = `<a class="page-link nav-button" href="#" onclick="filterMovies(${totalPages})">&#187;</a>`;
+    lastPageItem.innerHTML = `<a class="page-link nav-button" href="#" onclick="filterContent(${totalPages})">&#187;</a>`;
     paginationList.appendChild(lastPageItem);
 }
 
-window.onload = fetchCategories;
+document.querySelectorAll('input[name="content_type"]').forEach(radio => {
+    radio.addEventListener('change', fetchCategories); // Fetch categories when content type changes
+});
+
+window.onload = function() {
+    fetchCategories();
+};

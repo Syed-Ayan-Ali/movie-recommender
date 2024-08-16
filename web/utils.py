@@ -169,3 +169,65 @@ def filter_by_mood(df, mood):
             filtered_df = filtered_df[filtered_df['year'] < year_limit]
     
     return filtered_df
+
+
+def filter_content(df, filters):
+    selected_genres = filters.get('genres', [])
+    selected_cast = filters.get('cast', "").lower()
+    selected_years = filters.get('years', [])
+    description_keywords = filters.get('description', "").lower().split()
+    filter_logic = filters.get('filter_logic', 'or').lower()
+    title = filters.get('title', "").lower()
+    mood = filters.get('mood', "").lower()
+    page = filters.get('page', 1)
+    items_per_page = filters.get('items_per_page', 10)
+
+    # Apply mood-based filtering if applicable
+    if mood:
+        df = filter_by_mood(df, mood)
+    else:
+        conditions = []
+
+        if selected_genres:
+            if filter_logic == 'and':
+                genre_condition = df['genres'].apply(lambda x: all(genre in x for genre in selected_genres))
+            else:
+                genre_condition = df['genres'].apply(lambda x: any(genre in x for genre in selected_genres))
+            conditions.append(genre_condition)
+
+        if selected_cast:
+            cast_condition = df['cast'].str.contains(selected_cast, case=False, na=False)
+            conditions.append(cast_condition)
+
+        if selected_years:
+            expanded_years = [int(year) for year in selected_years]
+            year_condition = df['year'].isin(expanded_years)
+            conditions.append(year_condition)
+
+        if description_keywords:
+            if filter_logic == 'and':
+                description_condition = df['description'].apply(lambda x: isinstance(x, str) and all(keyword in x for keyword in description_keywords))
+            else:
+                description_condition = df['description'].apply(lambda x: isinstance(x, str) and any(keyword in x for keyword in description_keywords))
+            conditions.append(description_condition)
+
+        if title:
+            title_condition = df['title'].str.contains(title, case=False, na=False)
+            conditions.append(title_condition)
+
+        if conditions:
+            combined_condition = conditions[0]
+            for condition in conditions[1:]:
+                if filter_logic == 'and':
+                    combined_condition = combined_condition & condition
+                else:
+                    combined_condition = combined_condition | condition
+            df = df[combined_condition]
+
+    # Paginate results
+    total_items = len(df)
+    start_index = (page - 1) * items_per_page
+    end_index = start_index + items_per_page
+    paginated_df = df.iloc[start_index:end_index]
+
+    return paginated_df.fillna(''), total_items

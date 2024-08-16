@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+    <!-- Main Container -->
     <div class="container">
         <h1>Movie Filter</h1>
 
@@ -25,10 +26,26 @@
                 </select>
             </div>
 
+            <!-- Content Type Filter -->
             <div class="filter-section">
+                <h3>Content Type</h3>
+                <div class="filter-toggle">
+                    <input type="radio" id="content-movies" name="content_type" value="movies" checked>
+                    <label for="content-movies">Movies</label>
+                    <input type="radio" id="content-series" name="content_type" value="series">
+                    <label for="content-series">TV Series</label>
+                    <input type="radio" id="content-both" name="content_type" value="both">
+                    <label for="content-both">Both</label>
+                </div>
+            </div>
+
+
+            <!-- Release Year Filter -->
+            <div class="filter-section" id="year-filter">
                 <h3>Release Year</h3>
                 <div id="years"></div>
             </div>
+
 
             <div class="filter-section">
                 <h3>Genres</h3>
@@ -60,7 +77,7 @@
                 </div>
             </div>
 
-            <button class="filter-button" onclick="filterMovies(1)">Filter Movies</button>
+            <button class="filter-button" onclick="filterContent(1)">Filter Movies</button>
         </div>
 
         <h2>Movies</h2>
